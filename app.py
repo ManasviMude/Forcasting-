@@ -190,8 +190,7 @@ if predict_btn:
 # --------------------------------------------------
 st.subheader("📌 Remarks")
 st.write(
-    """
-    - Default Streamlit theme ensures visual consistency  
+    """  
     - Forecasting starts only after historical data ends  
     - Growth percentage quantifies future performance  
     - Buy/Hold/Sell recommendation is rule-based and interpretable  
