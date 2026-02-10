@@ -41,19 +41,19 @@ data = load_data()
 last_data_date = data.index[-1].date()
 
 # --------------------------------------------------
-# Key Metrics (Clean & Native)
+# Key Metrics
 # --------------------------------------------------
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Latest Price ($)", f"{data['Adj Close'].iloc[-1]:.2f}")
 col2.metric("Total Trading Days", len(data))
-col3.metric("Dataset Ends On", last_data_date)
+col3.metric("Dataset Ends On", last_data_date.strftime("%Y-%m-%d"))
 col4.metric("Selected Model", "LSTM")
 
 st.divider()
 
 # --------------------------------------------------
-# Historical Price Chart
+# Historical Chart
 # --------------------------------------------------
 st.subheader("📈 Historical Adjusted Close Price")
 st.line_chart(data["Adj Close"])
@@ -73,16 +73,14 @@ comparison = pd.DataFrame({
 st.dataframe(comparison, use_container_width=True)
 
 with st.expander("📌 Why LSTM was selected"):
-    st.write(
-        """
-        LSTM has the lowest RMSE, MAE, and MAPE values among all models,
-        indicating better predictive accuracy.
-        
-        Unlike ARIMA and SARIMA, LSTM can capture long-term dependencies
-        and non-linear patterns in stock price data, making it more suitable
-        for financial time series forecasting.
-        """
-    )
+    st.write("""
+    LSTM achieved the lowest RMSE, MAE, and MAPE values,
+    indicating superior prediction accuracy.
+    
+    Unlike ARIMA and SARIMA, LSTM captures long-term
+    dependencies and non-linear patterns present in
+    stock price movements.
+    """)
 
 st.divider()
 
@@ -92,8 +90,8 @@ st.divider()
 st.subheader("🔮 Forecast Future Stock Growth")
 
 st.info(
-    f"The historical dataset ends on **{last_data_date}**. "
-    "Any date selected after this point requires forecasting."
+    f"The historical dataset ends on **{last_data_date.strftime('%Y-%m-%d')}**. "
+    "Any selected date after this requires forecasting."
 )
 
 selected_date = st.date_input(
@@ -118,7 +116,6 @@ if predict_btn:
         st.warning("Please select a date within 120 business days.")
         st.stop()
 
-    # Prepare data
     ts = data["Adj Close"].values.reshape(-1, 1)
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(ts)
@@ -133,7 +130,6 @@ if predict_btn:
     X = np.array(X).reshape(-1, window, 1)
     y = np.array(y)
 
-    # Build model
     model = Sequential([
         LSTM(50, return_sequences=True, input_shape=(window, 1)),
         LSTM(50),
@@ -145,7 +141,6 @@ if predict_btn:
     with st.spinner("Training LSTM model..."):
         model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
-    # Forecast
     last_sequence = scaled_data[-window:]
     future_predictions = []
 
@@ -162,7 +157,6 @@ if predict_btn:
     current_price = data["Adj Close"].iloc[-1]
     growth_pct = ((predicted_price - current_price) / current_price) * 100
 
-    # Recommendation
     if growth_pct > 5:
         recommendation = "🟢 BUY"
     elif growth_pct < -5:
@@ -170,7 +164,6 @@ if predict_btn:
     else:
         recommendation = "🟡 HOLD"
 
-    # Forecast chart
     st.subheader("📉 Forecast Visualization")
 
     forecast_dates = pd.date_range(
@@ -183,7 +176,6 @@ if predict_btn:
 
     st.line_chart(pd.concat([data["Adj Close"].tail(120), forecast_df]))
 
-    # Results
     st.success("### 📊 Forecast Summary")
     st.write(f"**Prediction Date:** {selected_date}")
     st.write(f"**Predicted Price:** ${predicted_price:.2f}")
@@ -194,11 +186,9 @@ if predict_btn:
 # Remarks
 # --------------------------------------------------
 st.subheader("📌 Remarks")
-st.write(
-    """
-    - Default Streamlit theme ensures clarity and consistency  
-    - Forecasting starts after historical data ends  
-    - Growth percentage quantifies future performance  
-    - Buy/Hold/Sell recommendation is rule-based and interpretable  
-    """
-)
+st.write("""
+- Default Streamlit theme ensures clarity and consistency  
+- Forecasting starts after historical data ends  
+- Growth percentage quantifies future performance  
+- Buy/Hold/Sell recommendation is rule-based and interpretable  
+""")
