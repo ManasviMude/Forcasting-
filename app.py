@@ -20,17 +20,18 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# UI Enhancement CSS (VISUAL ONLY)
+# DARK UI CSS (VISUAL ONLY – NO LOGIC CHANGE)
 # --------------------------------------------------
 st.markdown("""
 <style>
 
-/* App background */
+/* Main background */
 .stApp {
-    background: linear-gradient(180deg, #f9fafb, #eef2f7);
+    background: radial-gradient(circle at top, #1e293b, #020617);
+    color: #e5e7eb;
 }
 
-/* Page spacing */
+/* Main container spacing */
 .block-container {
     padding-top: 2rem;
     padding-bottom: 3rem;
@@ -38,73 +39,91 @@ st.markdown("""
 
 /* Headings */
 h1, h2, h3 {
-    letter-spacing: -0.5px;
+    color: #f9fafb;
+    letter-spacing: -0.4px;
 }
 
 /* Metric cards */
 [data-testid="metric-container"] {
-    background: white;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     padding: 18px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
 }
 
 /* Metric labels */
 [data-testid="metric-container"] label {
-    font-size: 0.9rem;
-    color: #6b7280;
+    color: #9ca3af;
+    font-size: 0.85rem;
 }
 
 /* Metric values */
 [data-testid="metric-container"] div {
+    color: #38bdf8;
     font-size: 1.6rem;
     font-weight: 600;
 }
 
 /* Buttons */
 .stButton > button {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-    border-radius: 12px;
-    padding: 0.6rem 1.4rem;
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
+    color: #020617;
+    border-radius: 14px;
+    padding: 0.6rem 1.6rem;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     border: none;
-    box-shadow: 0 6px 20px rgba(37,99,235,0.35);
-    transition: all 0.2s ease-in-out;
+    box-shadow: 0 10px 30px rgba(56,189,248,0.45);
+    transition: all 0.25s ease;
 }
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(37,99,235,0.45);
+    box-shadow: 0 14px 40px rgba(56,189,248,0.65);
 }
 
-/* Dataframes */
+/* Dataframe */
 .stDataFrame {
-    border-radius: 14px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.04);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
 }
 
 /* Alerts */
 .stAlert {
-    border-radius: 14px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.06);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.6);
 }
 
 /* Expander */
 .streamlit-expanderHeader {
+    color: #e5e7eb;
     font-weight: 600;
-    font-size: 1rem;
 }
 
 /* Charts */
 [data-testid="stLineChart"] {
-    background: white;
-    padding: 14px;
-    border-radius: 16px;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.04);
+    padding: 16px;
+    border-radius: 18px;
+    box-shadow: 0 14px 35px rgba(0,0,0,0.7);
+}
+
+/* Divider */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255,255,255,0.2),
+        transparent
+    );
 }
 
 </style>
@@ -164,16 +183,14 @@ comparison = pd.DataFrame({
 st.dataframe(comparison, use_container_width=True)
 
 with st.expander("📌 Why was LSTM selected?"):
-    st.write(
-        """
-        LSTM achieved the lowest RMSE, MAE, and MAPE values among all evaluated models,
-        indicating superior predictive accuracy.
+    st.write("""
+    LSTM achieved the lowest RMSE, MAE, and MAPE values among all evaluated models,
+    indicating superior predictive accuracy.
 
-        Unlike ARIMA and SARIMA, LSTM is capable of learning long-term temporal
-        dependencies and non-linear patterns present in stock price movements,
-        making it more suitable for financial time series forecasting.
-        """
-    )
+    Unlike ARIMA and SARIMA, LSTM is capable of learning long-term temporal
+    dependencies and non-linear patterns present in stock price movements,
+    making it more suitable for financial time series forecasting.
+    """)
 
 st.divider()
 
@@ -280,10 +297,8 @@ if predict_btn:
 # Remarks
 # --------------------------------------------------
 st.subheader("📌 Remarks")
-st.write(
-    """  
-    - Forecasting starts only after historical data ends  
-    - Growth percentage quantifies future performance  
-    - Buy/Hold/Sell recommendation is rule-based and interpretable  
-    """
-)
+st.write("""
+- Forecasting starts only after historical data ends  
+- Growth percentage quantifies future performance  
+- Buy/Hold/Sell recommendation is rule-based and interpretable  
+""")
