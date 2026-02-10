@@ -20,6 +20,97 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
+# UI Enhancement CSS (VISUAL ONLY)
+# --------------------------------------------------
+st.markdown("""
+<style>
+
+/* App background */
+.stApp {
+    background: linear-gradient(180deg, #f9fafb, #eef2f7);
+}
+
+/* Page spacing */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* Headings */
+h1, h2, h3 {
+    letter-spacing: -0.5px;
+}
+
+/* Metric cards */
+[data-testid="metric-container"] {
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Metric labels */
+[data-testid="metric-container"] label {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* Metric values */
+[data-testid="metric-container"] div {
+    font-size: 1.6rem;
+    font-weight: 600;
+}
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    border-radius: 12px;
+    padding: 0.6rem 1.4rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(37,99,235,0.45);
+}
+
+/* Dataframes */
+.stDataFrame {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+/* Alerts */
+.stAlert {
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* Expander */
+.streamlit-expanderHeader {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Charts */
+[data-testid="stLineChart"] {
+    background: white;
+    padding: 14px;
+    border-radius: 16px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------------------------------------
 # Header
 # --------------------------------------------------
 st.title("🍎 Apple Stock Growth Forecast")
@@ -41,7 +132,7 @@ data = load_data()
 last_data_date = data.index[-1].date()
 
 # --------------------------------------------------
-# Key Metrics (Professional & Native)
+# Key Metrics
 # --------------------------------------------------
 m1, m2, m3, m4 = st.columns(4)
 
