@@ -20,51 +20,46 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# Custom CSS (Eye-Catchy UI)
+# Light macOS / iOS Style CSS
 # --------------------------------------------------
 st.markdown("""
 <style>
 body {
-    background-color: #0e1117;
+    background-color: #f5f5f7;
 }
 .title-text {
-    font-size: 38px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #22c55e, #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 36px;
+    font-weight: 700;
+    color: #1d1d1f;
 }
 .subtitle {
-    color: #9ca3af;
+    color: #6e6e73;
     font-size: 16px;
 }
 .card {
-    background: #111827;
-    padding: 22px;
+    background: white;
+    padding: 20px;
     border-radius: 14px;
     text-align: center;
-    box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
 }
 .card-title {
     font-size: 14px;
-    color: #9ca3af;
+    color: #6e6e73;
 }
 .card-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: #22c55e;
+    font-size: 26px;
+    font-weight: 600;
+    color: #0071e3;
 }
 .section {
-    margin-top: 40px;
+    margin-top: 35px;
 }
-.badge {
-    display: inline-block;
-    background: #064e3b;
-    color: #22c55e;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
+.remark {
+    background: #f0f8ff;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 14px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -72,8 +67,8 @@ body {
 # --------------------------------------------------
 # Header
 # --------------------------------------------------
-st.markdown("<div class='title-text'>🍎 Apple Stock Growth Forecast</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>AI-powered stock price prediction using LSTM deep learning</div>", unsafe_allow_html=True)
+st.markdown("<div class='title-text'>Apple Stock Growth Forecast</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Historical analysis and future trend estimation</div>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -88,6 +83,7 @@ def load_data():
     return df
 
 data = load_data()
+last_data_date = data.index[-1].date()
 
 # --------------------------------------------------
 # KPI Cards
@@ -110,14 +106,14 @@ c2.markdown(f"""
 
 c3.markdown(f"""
 <div class="card">
-    <div class="card-title">Start Date</div>
-    <div class="card-value">{data.index.min().date()}</div>
+    <div class="card-title">Dataset Ends On</div>
+    <div class="card-value">{last_data_date}</div>
 </div>
 """, unsafe_allow_html=True)
 
 c4.markdown("""
 <div class="card">
-    <div class="card-title">Best Model</div>
+    <div class="card-title">Selected Forecast Model</div>
     <div class="card-value">LSTM</div>
 </div>
 """, unsafe_allow_html=True)
@@ -143,7 +139,17 @@ comparison = pd.DataFrame({
 })
 
 st.dataframe(comparison, use_container_width=True)
-st.markdown("<span class='badge'>✔ LSTM Selected as Best Model</span>", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="remark">
+<b>Why LSTM?</b><br>
+Among all models, LSTM achieves the lowest RMSE, MAE, and MAPE values.
+This indicates better accuracy and lower prediction error.
+LSTM is well-suited for stock price forecasting because it captures long-term
+temporal dependencies and non-linear patterns present in financial time series,
+which traditional ARIMA-based models cannot model effectively.
+</div>
+""", unsafe_allow_html=True)
 
 # --------------------------------------------------
 # Forecast Section
@@ -151,29 +157,33 @@ st.markdown("<span class='badge'>✔ LSTM Selected as Best Model</span>", unsafe
 st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("🔮 Forecast Future Stock Growth")
 
+st.info(f"""
+The historical dataset ends on **{last_data_date}**.  
+Any date selected after this requires forecasting.
+Predictions are limited to **120 business days** beyond the dataset
+to maintain reasonable reliability.
+""")
+
 selected_date = st.date_input(
     "📅 Select a future business date",
-    min_value=data.index[-1].date()
+    min_value=last_data_date
 )
 
-predict_btn = st.button("🚀 Predict Stock Trend")
+predict_btn = st.button("📈 Predict Stock Trend")
 
 # --------------------------------------------------
 # Prediction Logic
 # --------------------------------------------------
 if predict_btn:
 
-    last_date = data.index[-1].date()
-    n_days = len(pd.date_range(start=last_date, end=selected_date, freq="B")) - 1
-
-    MAX_DAYS = 120
+    n_days = len(pd.date_range(start=last_data_date, end=selected_date, freq="B")) - 1
 
     if n_days <= 0:
-        st.warning("⚠️ Please select a valid future date.")
+        st.warning("Please select a future date after the dataset end.")
         st.stop()
 
-    if n_days > MAX_DAYS:
-        st.warning("⚠️ Please select a date within the next 120 business days.")
+    if n_days > 120:
+        st.warning("Please select a date within 120 business days after the dataset end.")
         st.stop()
 
     ts = data['Adj Close'].values.reshape(-1, 1)
@@ -188,20 +198,17 @@ if predict_btn:
         X.append(scaled_data[i-window:i, 0])
         y.append(scaled_data[i, 0])
 
-    X = np.array(X)
+    X = np.array(X).reshape(-1, window, 1)
     y = np.array(y)
-    X = X.reshape(X.shape[0], X.shape[1], 1)
 
     model = Sequential([
-        LSTM(50, return_sequences=True, input_shape=(X.shape[1], 1)),
+        LSTM(50, return_sequences=True, input_shape=(window, 1)),
         LSTM(50),
         Dense(1)
     ])
 
     model.compile(optimizer="adam", loss="mse")
-
-    with st.spinner("🤖 Training LSTM model..."):
-        model.fit(X, y, epochs=5, batch_size=32, verbose=0)
+    model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
     last_sequence = scaled_data[-window:]
     future_predictions = []
@@ -211,47 +218,44 @@ if predict_btn:
         future_predictions.append(pred[0, 0])
         last_sequence = np.append(last_sequence[1:], pred)
 
-    future_predictions = scaler.inverse_transform(
+    future_prices = scaler.inverse_transform(
         np.array(future_predictions).reshape(-1, 1)
     )
 
-    future_dates = pd.date_range(
-        start=data.index[-1],
-        periods=n_days + 1,
-        freq="B"
-    )[1:]
+    predicted_price = future_prices[-1][0]
+    current_price = data['Adj Close'].iloc[-1]
 
-    forecast_df = pd.DataFrame(
-        future_predictions,
-        index=future_dates,
-        columns=["Forecast Price"]
-    )
+    growth_pct = ((predicted_price - current_price) / current_price) * 100
 
-    st.subheader("📉 Forecast Trend Visualization")
+    if growth_pct > 5:
+        recommendation = "🟢 BUY"
+    elif growth_pct < -5:
+        recommendation = "🔴 SELL"
+    else:
+        recommendation = "🟡 HOLD"
 
-    combined = pd.concat([
-        data['Adj Close'].tail(120),
-        forecast_df['Forecast Price']
-    ])
+    st.subheader("📉 Forecast Visualization")
+    forecast_dates = pd.date_range(start=last_data_date, periods=n_days + 1, freq="B")[1:]
+    forecast_df = pd.DataFrame(future_prices, index=forecast_dates, columns=["Forecast"])
 
-    st.line_chart(combined)
+    st.line_chart(pd.concat([data['Adj Close'].tail(120), forecast_df]))
 
-    predicted_price = forecast_df.iloc[-1, 0]
-
-    st.success(
-        f"📍 Predicted Apple stock price on **{selected_date}**: **${predicted_price:.2f}**"
-    )
-
-# --------------------------------------------------
-# Business Insights
-# --------------------------------------------------
-st.markdown("<div class='section'></div>", unsafe_allow_html=True)
-st.subheader("📌 Business Insights")
-
-st.markdown("""
-- 📈 Apple exhibits **consistent long-term growth**
-- 🤖 LSTM captures **non-linear market behavior**
-- 🔮 Forecast indicates **stable upward momentum**
-- 💼 Useful for **strategic investment planning**
+    st.success(f"""
+**Prediction Date:** {selected_date}  
+**Predicted Price:** ${predicted_price:.2f}  
+**Expected Growth:** {growth_pct:.2f}%  
+**Recommendation:** {recommendation}
 """)
 
+# --------------------------------------------------
+# Business Remarks
+# --------------------------------------------------
+st.markdown("<div class='section'></div>", unsafe_allow_html=True)
+st.subheader("📌 Remarks")
+
+st.markdown("""
+- Forecasting begins only after historical data ends  
+- Growth percentage helps quantify future performance  
+- Buy / Hold / Sell signal is rule-based and explainable  
+- Suitable for academic analysis and decision support  
+""")
