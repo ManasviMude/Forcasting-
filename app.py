@@ -20,28 +20,33 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# Light macOS / iOS Style CSS
+# macOS / iOS Light Theme CSS
 # --------------------------------------------------
 st.markdown("""
 <style>
-body {
+/* App background */
+.stApp {
     background-color: #f5f5f7;
 }
+
+/* Headings */
 .title-text {
-    font-size: 36px;
+    font-size: 34px;
     font-weight: 700;
     color: #1d1d1f;
 }
 .subtitle {
-    color: #6e6e73;
     font-size: 16px;
+    color: #6e6e73;
 }
+
+/* Cards */
 .card {
-    background: white;
+    background: #ffffff;
     padding: 20px;
-    border-radius: 14px;
+    border-radius: 16px;
     text-align: center;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.08);
+    box-shadow: 0px 8px 24px rgba(0,0,0,0.08);
 }
 .card-title {
     font-size: 14px;
@@ -52,14 +57,36 @@ body {
     font-weight: 600;
     color: #0071e3;
 }
+
+/* Sections */
 .section {
-    margin-top: 35px;
+    margin-top: 36px;
 }
+
+/* Remarks box */
 .remark {
-    background: #f0f8ff;
-    padding: 16px;
-    border-radius: 12px;
+    background: #eef5ff;
+    padding: 18px;
+    border-radius: 14px;
     font-size: 14px;
+    color: #1d1d1f;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #0071e3;
+    color: white;
+    border-radius: 10px;
+    padding: 0.5em 1.2em;
+    font-weight: 600;
+}
+.stButton > button:hover {
+    background-color: #005bb5;
+}
+
+/* Info boxes */
+.stAlert {
+    border-radius: 12px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -142,12 +169,11 @@ st.dataframe(comparison, use_container_width=True)
 
 st.markdown("""
 <div class="remark">
-<b>Why LSTM?</b><br>
-Among all models, LSTM achieves the lowest RMSE, MAE, and MAPE values.
-This indicates better accuracy and lower prediction error.
-LSTM is well-suited for stock price forecasting because it captures long-term
-temporal dependencies and non-linear patterns present in financial time series,
-which traditional ARIMA-based models cannot model effectively.
+<b>Why LSTM was selected:</b><br>
+LSTM achieves the lowest RMSE, MAE, and MAPE values among all models.
+This indicates higher prediction accuracy and reduced error.
+Unlike ARIMA-based models, LSTM captures long-term dependencies
+and non-linear patterns commonly observed in stock price movements.
 </div>
 """, unsafe_allow_html=True)
 
@@ -159,9 +185,8 @@ st.subheader("🔮 Forecast Future Stock Growth")
 
 st.info(f"""
 The historical dataset ends on **{last_data_date}**.  
-Any date selected after this requires forecasting.
-Predictions are limited to **120 business days** beyond the dataset
-to maintain reasonable reliability.
+Any selected date after this point requires forecasting.
+Predictions are limited to **120 business days** to maintain reliability.
 """)
 
 selected_date = st.date_input(
@@ -179,11 +204,11 @@ if predict_btn:
     n_days = len(pd.date_range(start=last_data_date, end=selected_date, freq="B")) - 1
 
     if n_days <= 0:
-        st.warning("Please select a future date after the dataset end.")
+        st.warning("Please select a valid future date.")
         st.stop()
 
     if n_days > 120:
-        st.warning("Please select a date within 120 business days after the dataset end.")
+        st.warning("Please select a date within 120 business days.")
         st.stop()
 
     ts = data['Adj Close'].values.reshape(-1, 1)
@@ -224,7 +249,6 @@ if predict_btn:
 
     predicted_price = future_prices[-1][0]
     current_price = data['Adj Close'].iloc[-1]
-
     growth_pct = ((predicted_price - current_price) / current_price) * 100
 
     if growth_pct > 5:
@@ -235,6 +259,7 @@ if predict_btn:
         recommendation = "🟡 HOLD"
 
     st.subheader("📉 Forecast Visualization")
+
     forecast_dates = pd.date_range(start=last_data_date, periods=n_days + 1, freq="B")[1:]
     forecast_df = pd.DataFrame(future_prices, index=forecast_dates, columns=["Forecast"])
 
@@ -248,14 +273,14 @@ if predict_btn:
 """)
 
 # --------------------------------------------------
-# Business Remarks
+# Remarks
 # --------------------------------------------------
 st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("📌 Remarks")
 
 st.markdown("""
+- Light-themed UI improves readability and presentation clarity  
 - Forecasting begins only after historical data ends  
-- Growth percentage helps quantify future performance  
-- Buy / Hold / Sell signal is rule-based and explainable  
-- Suitable for academic analysis and decision support  
+- Growth percentage provides quantitative insight  
+- Buy/Hold/Sell signal is rule-based and interpretable  
 """)
