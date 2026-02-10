@@ -20,82 +20,10 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# macOS / iOS Light Theme CSS
+# App Header
 # --------------------------------------------------
-st.markdown("""
-<style>
-/* App background */
-.stApp {
-    background-color: #f5f5f7;
-}
-
-/* Headings */
-.title-text {
-    font-size: 34px;
-    font-weight: 700;
-    color: #1d1d1f;
-}
-.subtitle {
-    font-size: 16px;
-    color: #6e6e73;
-}
-
-/* Cards */
-.card {
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: 0px 8px 24px rgba(0,0,0,0.08);
-}
-.card-title {
-    font-size: 14px;
-    color: #6e6e73;
-}
-.card-value {
-    font-size: 26px;
-    font-weight: 600;
-    color: #0071e3;
-}
-
-/* Sections */
-.section {
-    margin-top: 36px;
-}
-
-/* Remarks box */
-.remark {
-    background: #eef5ff;
-    padding: 18px;
-    border-radius: 14px;
-    font-size: 14px;
-    color: #1d1d1f;
-}
-
-/* Buttons */
-.stButton > button {
-    background-color: #0071e3;
-    color: white;
-    border-radius: 10px;
-    padding: 0.5em 1.2em;
-    font-weight: 600;
-}
-.stButton > button:hover {
-    background-color: #005bb5;
-}
-
-/* Info boxes */
-.stAlert {
-    border-radius: 12px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# --------------------------------------------------
-# Header
-# --------------------------------------------------
-st.markdown("<div class='title-text'>Apple Stock Growth Forecast</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Historical analysis and future trend estimation</div>", unsafe_allow_html=True)
+st.title("🍎 Apple Stock Growth Forecast")
+st.caption("Historical analysis and future trend estimation")
 
 st.divider()
 
@@ -105,57 +33,34 @@ st.divider()
 @st.cache_data
 def load_data():
     df = pd.read_csv("AAPL.csv")
-    df['Date'] = pd.to_datetime(df['Date'])
-    df.set_index('Date', inplace=True)
+    df["Date"] = pd.to_datetime(df["Date"])
+    df.set_index("Date", inplace=True)
     return df
 
 data = load_data()
 last_data_date = data.index[-1].date()
 
 # --------------------------------------------------
-# KPI Cards
+# Key Metrics (Clean & Native)
 # --------------------------------------------------
-c1, c2, c3, c4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4)
 
-c1.markdown(f"""
-<div class="card">
-    <div class="card-title">Latest Price</div>
-    <div class="card-value">${data['Adj Close'].iloc[-1]:.2f}</div>
-</div>
-""", unsafe_allow_html=True)
+col1.metric("Latest Price ($)", f"{data['Adj Close'].iloc[-1]:.2f}")
+col2.metric("Total Trading Days", len(data))
+col3.metric("Dataset Ends On", last_data_date)
+col4.metric("Selected Model", "LSTM")
 
-c2.markdown(f"""
-<div class="card">
-    <div class="card-title">Total Trading Days</div>
-    <div class="card-value">{len(data)}</div>
-</div>
-""", unsafe_allow_html=True)
-
-c3.markdown(f"""
-<div class="card">
-    <div class="card-title">Dataset Ends On</div>
-    <div class="card-value">{last_data_date}</div>
-</div>
-""", unsafe_allow_html=True)
-
-c4.markdown("""
-<div class="card">
-    <div class="card-title">Selected Forecast Model</div>
-    <div class="card-value">LSTM</div>
-</div>
-""", unsafe_allow_html=True)
+st.divider()
 
 # --------------------------------------------------
-# Historical Chart
+# Historical Price Chart
 # --------------------------------------------------
-st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("📈 Historical Adjusted Close Price")
-st.line_chart(data['Adj Close'])
+st.line_chart(data["Adj Close"])
 
 # --------------------------------------------------
 # Model Comparison
 # --------------------------------------------------
-st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("📊 Model Performance Comparison")
 
 comparison = pd.DataFrame({
@@ -167,27 +72,29 @@ comparison = pd.DataFrame({
 
 st.dataframe(comparison, use_container_width=True)
 
-st.markdown("""
-<div class="remark">
-<b>Why LSTM was selected:</b><br>
-LSTM achieves the lowest RMSE, MAE, and MAPE values among all models.
-This indicates higher prediction accuracy and reduced error.
-Unlike ARIMA-based models, LSTM captures long-term dependencies
-and non-linear patterns commonly observed in stock price movements.
-</div>
-""", unsafe_allow_html=True)
+with st.expander("📌 Why LSTM was selected"):
+    st.write(
+        """
+        LSTM has the lowest RMSE, MAE, and MAPE values among all models,
+        indicating better predictive accuracy.
+        
+        Unlike ARIMA and SARIMA, LSTM can capture long-term dependencies
+        and non-linear patterns in stock price data, making it more suitable
+        for financial time series forecasting.
+        """
+    )
+
+st.divider()
 
 # --------------------------------------------------
 # Forecast Section
 # --------------------------------------------------
-st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("🔮 Forecast Future Stock Growth")
 
-st.info(f"""
-The historical dataset ends on **{last_data_date}**.  
-Any selected date after this point requires forecasting.
-Predictions are limited to **120 business days** to maintain reliability.
-""")
+st.info(
+    f"The historical dataset ends on **{last_data_date}**. "
+    "Any date selected after this point requires forecasting."
+)
 
 selected_date = st.date_input(
     "📅 Select a future business date",
@@ -211,8 +118,8 @@ if predict_btn:
         st.warning("Please select a date within 120 business days.")
         st.stop()
 
-    ts = data['Adj Close'].values.reshape(-1, 1)
-
+    # Prepare data
+    ts = data["Adj Close"].values.reshape(-1, 1)
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(ts)
 
@@ -220,12 +127,13 @@ if predict_btn:
     X, y = [], []
 
     for i in range(window, len(scaled_data)):
-        X.append(scaled_data[i-window:i, 0])
+        X.append(scaled_data[i - window:i, 0])
         y.append(scaled_data[i, 0])
 
     X = np.array(X).reshape(-1, window, 1)
     y = np.array(y)
 
+    # Build model
     model = Sequential([
         LSTM(50, return_sequences=True, input_shape=(window, 1)),
         LSTM(50),
@@ -233,8 +141,11 @@ if predict_btn:
     ])
 
     model.compile(optimizer="adam", loss="mse")
-    model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
+    with st.spinner("Training LSTM model..."):
+        model.fit(X, y, epochs=5, batch_size=32, verbose=0)
+
+    # Forecast
     last_sequence = scaled_data[-window:]
     future_predictions = []
 
@@ -248,9 +159,10 @@ if predict_btn:
     )
 
     predicted_price = future_prices[-1][0]
-    current_price = data['Adj Close'].iloc[-1]
+    current_price = data["Adj Close"].iloc[-1]
     growth_pct = ((predicted_price - current_price) / current_price) * 100
 
+    # Recommendation
     if growth_pct > 5:
         recommendation = "🟢 BUY"
     elif growth_pct < -5:
@@ -258,29 +170,35 @@ if predict_btn:
     else:
         recommendation = "🟡 HOLD"
 
+    # Forecast chart
     st.subheader("📉 Forecast Visualization")
 
-    forecast_dates = pd.date_range(start=last_data_date, periods=n_days + 1, freq="B")[1:]
-    forecast_df = pd.DataFrame(future_prices, index=forecast_dates, columns=["Forecast"])
+    forecast_dates = pd.date_range(
+        start=last_data_date, periods=n_days + 1, freq="B"
+    )[1:]
 
-    st.line_chart(pd.concat([data['Adj Close'].tail(120), forecast_df]))
+    forecast_df = pd.DataFrame(
+        future_prices, index=forecast_dates, columns=["Forecast"]
+    )
 
-    st.success(f"""
-**Prediction Date:** {selected_date}  
-**Predicted Price:** ${predicted_price:.2f}  
-**Expected Growth:** {growth_pct:.2f}%  
-**Recommendation:** {recommendation}
-""")
+    st.line_chart(pd.concat([data["Adj Close"].tail(120), forecast_df]))
+
+    # Results
+    st.success("### 📊 Forecast Summary")
+    st.write(f"**Prediction Date:** {selected_date}")
+    st.write(f"**Predicted Price:** ${predicted_price:.2f}")
+    st.write(f"**Expected Growth:** {growth_pct:.2f}%")
+    st.write(f"**Recommendation:** {recommendation}")
 
 # --------------------------------------------------
 # Remarks
 # --------------------------------------------------
-st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("📌 Remarks")
-
-st.markdown("""
-- Light-themed UI improves readability and presentation clarity  
-- Forecasting begins only after historical data ends  
-- Growth percentage provides quantitative insight  
-- Buy/Hold/Sell signal is rule-based and interpretable  
-""")
+st.write(
+    """
+    - Default Streamlit theme ensures clarity and consistency  
+    - Forecasting starts after historical data ends  
+    - Growth percentage quantifies future performance  
+    - Buy/Hold/Sell recommendation is rule-based and interpretable  
+    """
+)
