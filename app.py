@@ -73,7 +73,7 @@ body {
 # Header
 # --------------------------------------------------
 st.markdown("<div class='title-text'>🍎 Apple Stock Growth Forecast</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>AI-powered long-term stock trend prediction using LSTM</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>AI-powered stock price prediction using LSTM deep learning</div>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -103,14 +103,14 @@ c1.markdown(f"""
 
 c2.markdown(f"""
 <div class="card">
-    <div class="card-title">Trading Days</div>
+    <div class="card-title">Total Trading Days</div>
     <div class="card-value">{len(data)}</div>
 </div>
 """, unsafe_allow_html=True)
 
 c3.markdown(f"""
 <div class="card">
-    <div class="card-title">Data From</div>
+    <div class="card-title">Start Date</div>
     <div class="card-value">{data.index.min().date()}</div>
 </div>
 """, unsafe_allow_html=True)
@@ -152,31 +152,29 @@ st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("🔮 Forecast Future Stock Growth")
 
 selected_date = st.date_input(
-    "📅 Select any future business date",
+    "📅 Select a future business date",
     min_value=data.index[-1].date()
 )
 
 predict_btn = st.button("🚀 Predict Stock Trend")
 
 # --------------------------------------------------
-# Prediction Logic (NO DATE LIMIT)
+# Prediction Logic
 # --------------------------------------------------
 if predict_btn:
 
     last_date = data.index[-1].date()
     n_days = len(pd.date_range(start=last_date, end=selected_date, freq="B")) - 1
 
+    MAX_DAYS = 120
+
     if n_days <= 0:
-        st.warning("⚠️ Please select a future date.")
+        st.warning("⚠️ Please select a valid future date.")
         st.stop()
 
-    # Soft warning for very long horizons
-    if n_days > 365:
-        st.info(
-            "ℹ️ You selected a long-term future date. "
-            "Predictions far into the future show overall trend, "
-            "not exact price accuracy."
-        )
+    if n_days > MAX_DAYS:
+        st.warning("⚠️ Please select a date within the next 120 business days.")
+        st.stop()
 
     ts = data['Adj Close'].values.reshape(-1, 1)
 
@@ -232,7 +230,7 @@ if predict_btn:
     st.subheader("📉 Forecast Trend Visualization")
 
     combined = pd.concat([
-        data['Adj Close'].tail(200),
+        data['Adj Close'].tail(120),
         forecast_df['Forecast Price']
     ])
 
@@ -251,9 +249,9 @@ st.markdown("<div class='section'></div>", unsafe_allow_html=True)
 st.subheader("📌 Business Insights")
 
 st.markdown("""
-- 📈 Apple demonstrates **strong long-term growth patterns**
-- 🤖 LSTM captures **non-linear temporal dependencies**
-- 🔮 Long-range forecasts indicate **overall trend direction**
-- 💼 Useful for **strategic and long-term investment analysis**
+- 📈 Apple exhibits **consistent long-term growth**
+- 🤖 LSTM captures **non-linear market behavior**
+- 🔮 Forecast indicates **stable upward momentum**
+- 💼 Useful for **strategic investment planning**
 """)
 
