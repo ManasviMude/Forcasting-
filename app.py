@@ -53,7 +53,7 @@ st.caption("AI-powered forecasting using LSTM deep learning")
 # -----------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("AAPL (5).csv")   # <-- your dataset
+    df = pd.read_csv("AAPL.csv")   # <-- your dataset
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
     return df
