@@ -15,21 +15,45 @@ from tensorflow.keras.layers import LSTM, Dense
 # -----------------------------------------
 st.set_page_config(
     page_title="Apple Stock Forecast",
+    page_icon="📈",
     layout="wide"
 )
 
-st.title("📈 Apple Stock Price Forecast Dashboard")
+# -----------------------------------------
+# Custom CSS (Modern UI)
+# -----------------------------------------
 st.markdown("""
-This dashboard analyzes **Apple Inc. stock prices** and forecasts  
-future prices using an **LSTM deep learning model**.
-""")
+<style>
+.metric-card {
+    background-color: #111827;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.metric-title {
+    font-size: 14px;
+    color: #9CA3AF;
+}
+.metric-value {
+    font-size: 26px;
+    font-weight: bold;
+    color: #10B981;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------------------
+# Title Section
+# -----------------------------------------
+st.title("📈 Apple Stock Price Forecast Dashboard")
+st.caption("AI-powered forecasting using LSTM deep learning")
 
 # -----------------------------------------
 # Load Data
 # -----------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("AAPL.csv")
+    df = pd.read_csv("AAPL (5).csv")   # <-- your dataset
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
     return df
@@ -37,21 +61,46 @@ def load_data():
 data = load_data()
 
 # -----------------------------------------
-# Show Raw Data
+# Key Metrics
 # -----------------------------------------
-st.subheader("📊 Historical Stock Data")
-st.dataframe(data.tail())
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Latest Close Price</div>
+        <div class="metric-value">${data['Adj Close'].iloc[-1]:.2f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Total Records</div>
+        <div class="metric-value">{len(data)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Start Date</div>
+        <div class="metric-value">{data.index.min().date()}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.divider()
 
 # -----------------------------------------
-# Historical Price Chart (SAFE)
+# Historical Chart
 # -----------------------------------------
-st.subheader("📈 Adjusted Close Price Over Time")
+st.subheader("📊 Historical Adjusted Close Price")
 st.line_chart(data['Adj Close'])
 
 # -----------------------------------------
-# Model Comparison (From Task 2)
+# Model Comparison
 # -----------------------------------------
-st.subheader("📌 Model Comparison")
+st.subheader("📌 Model Performance Comparison")
 
 comparison = pd.DataFrame({
     "Model": ["ARIMA", "SARIMA", "LSTM"],
@@ -60,23 +109,45 @@ comparison = pd.DataFrame({
     "MAPE (%)": [18.15, 13.97, 2.81]
 })
 
-st.dataframe(comparison)
-st.success("✅ LSTM selected as the best model based on lowest RMSE, MAE, and MAPE.")
+st.dataframe(comparison, use_container_width=True)
+st.success("✅ LSTM selected as the best performing model")
+
+st.divider()
 
 # -----------------------------------------
-# LSTM Forecast (Next 30 Days)
+# Date Picker
 # -----------------------------------------
-st.subheader("🔮 LSTM Forecast – Next 30 Days")
+st.subheader("📅 Select Future Date for Forecast")
 
-# Prepare time series
+selected_date = st.date_input(
+    "Choose a future business date",
+    min_value=data.index[-1].date()
+)
+
+# Convert date to business days
+last_date = data.index[-1].date()
+n_days = len(pd.date_range(start=last_date, end=selected_date, freq="B")) - 1
+
+MAX_DAYS = 120
+if n_days <= 0:
+    st.warning("Please select a future date.")
+    st.stop()
+
+if n_days > MAX_DAYS:
+    st.warning("⚠️ Please select a date within the next 120 business days.")
+    st.stop()
+
+# -----------------------------------------
+# LSTM Preparation
+# -----------------------------------------
 ts = data['Adj Close'].dropna().values.reshape(-1, 1)
 
 scaler = MinMaxScaler()
 scaled_data = scaler.fit_transform(ts)
 
-# Create sequences
 window = 60
 X, y = [], []
+
 for i in range(window, len(scaled_data)):
     X.append(scaled_data[i-window:i, 0])
     y.append(scaled_data[i, 0])
@@ -85,7 +156,9 @@ X = np.array(X)
 y = np.array(y)
 X = X.reshape(X.shape[0], X.shape[1], 1)
 
-# Train LSTM (lightweight for cloud)
+# -----------------------------------------
+# Train LSTM
+# -----------------------------------------
 model = Sequential([
     LSTM(50, return_sequences=True, input_shape=(X.shape[1], 1)),
     LSTM(50),
@@ -94,14 +167,16 @@ model = Sequential([
 
 model.compile(optimizer="adam", loss="mse")
 
-with st.spinner("Training LSTM model..."):
+with st.spinner("🔄 Training LSTM model..."):
     model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
-# Forecast next 30 days
+# -----------------------------------------
+# Forecast Until Selected Date
+# -----------------------------------------
 last_sequence = scaled_data[-window:]
 future_predictions = []
 
-for _ in range(30):
+for _ in range(n_days):
     pred = model.predict(last_sequence.reshape(1, window, 1), verbose=0)
     future_predictions.append(pred[0, 0])
     last_sequence = np.append(last_sequence[1:], pred)
@@ -112,7 +187,7 @@ future_predictions = scaler.inverse_transform(
 
 future_dates = pd.date_range(
     start=data.index[-1],
-    periods=31,
+    periods=n_days + 1,
     freq="B"
 )[1:]
 
@@ -123,10 +198,24 @@ forecast_df = pd.DataFrame(
 )
 
 # -----------------------------------------
-# Forecast Chart (SAFE)
+# Forecast Visualization
 # -----------------------------------------
-st.subheader("📈 30-Day Forecast Trend")
-st.line_chart(forecast_df)
+st.subheader("🔮 Forecast Trend")
+
+combined = pd.concat([
+    data['Adj Close'].tail(120),
+    forecast_df['Forecast Price']
+])
+
+st.line_chart(combined)
+
+# Highlight selected date prediction
+predicted_price = forecast_df.loc[forecast_df.index[-1], "Forecast Price"]
+
+st.markdown(f"""
+### 📍 Prediction for **{selected_date}**
+**Estimated Price:** 🟢 **${predicted_price:.2f}**
+""")
 
 # -----------------------------------------
 # Business Insights
@@ -134,8 +223,8 @@ st.line_chart(forecast_df)
 st.subheader("📌 Business Insights")
 
 st.markdown("""
-- Apple stock shows a **strong long-term upward trend**
-- LSTM outperforms ARIMA and SARIMA models
-- Forecast suggests **stable growth with moderate volatility**
-- Useful for **long-term investment decision-making**
+- Apple stock demonstrates **strong long-term growth**
+- LSTM effectively captures **temporal market patterns**
+- Forecast indicates **stable upward momentum**
+- Useful for **strategic & long-term investment planning**
 """)
